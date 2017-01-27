@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cake.Android.SdkManager", "Cake.Android.SdkManager\Cake.Android.SdkManager.csproj", "{DAE552A3-F16C-4A8C-BABC-635DF880B953}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cake.Android.SdkManager.Tests", "Cake.Android.SdkManager.Tests\Cake.Android.SdkManager.Tests.csproj", "{B50B21A5-4147-4333-B2C9-25B26081DA69}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DAE552A3-F16C-4A8C-BABC-635DF880B953}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAE552A3-F16C-4A8C-BABC-635DF880B953}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAE552A3-F16C-4A8C-BABC-635DF880B953}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAE552A3-F16C-4A8C-BABC-635DF880B953}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B50B21A5-4147-4333-B2C9-25B26081DA69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B50B21A5-4147-4333-B2C9-25B26081DA69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B50B21A5-4147-4333-B2C9-25B26081DA69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B50B21A5-4147-4333-B2C9-25B26081DA69}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
