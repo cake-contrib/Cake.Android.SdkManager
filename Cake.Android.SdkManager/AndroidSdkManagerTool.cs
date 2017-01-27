@@ -27,8 +27,7 @@ namespace Cake.AndroidSdkManager
 		{
 			return new List<string> {
 				"sdkmanager",
-				"sdkmanager.bat",
-				"sdkmanager.exe"
+				"sdkmanager.bat"
 			};
 		}
 
@@ -37,7 +36,11 @@ namespace Cake.AndroidSdkManager
 			var results = new List<FilePath>();
 
 			var ext = environment.Platform.IsUnix() ? "" : ".bat";
-			var androidHome = environment.GetEnvironmentVariable("ANDROID_HOME");
+            var androidHome = settings.SdkRoot.MakeAbsolute(environment).FullPath;
+
+            if (!System.IO.Directory.Exists (androidHome))
+			    androidHome = environment.GetEnvironmentVariable("ANDROID_HOME");
+
 			if (!string.IsNullOrEmpty(androidHome) && System.IO.Directory.Exists(androidHome))
 			{
 				var exe = new DirectoryPath(androidHome).Combine("tools").Combine("bin").CombineWithFilePath("sdkmanager" + ext);
