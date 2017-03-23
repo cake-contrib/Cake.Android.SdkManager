@@ -1,6 +1,5 @@
 ﻿using Cake.Core;
 using Cake.Core.IO;
-using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
