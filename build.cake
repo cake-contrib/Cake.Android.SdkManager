@@ -3,6 +3,8 @@ var nuspec = "./Cake.Android.SdkManager.nuspec";
 
 var target = Argument ("target", "libs");
 
+var NUGET_VERSION = Argument("nugetversion", "0.9999");
+
 var SDK_URL_BASE = "https://dl.google.com/android/repository/tools_r{0}-{1}.zip";
 var SDK_VERSION = "25.2.3";
 
@@ -35,6 +37,7 @@ Task ("nuget").IsDependentOn ("libs").Does (() =>
 	NuGetPack (nuspec, new NuGetPackSettings { 
 		Verbosity = NuGetVerbosity.Detailed,
 		OutputDirectory = "./nupkg/",
+		Version = NUGET_VERSION,
 		// NuGet messes up path on mac, so let's add ./ in front again
 		BasePath = "././",
 	});	
