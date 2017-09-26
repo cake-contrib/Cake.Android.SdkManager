@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using Cake.Core;
+﻿using Cake.Core;
 using Cake.Core.IO;
 using Cake.Core.Tooling;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Cake.AndroidSdkManager
 {
@@ -36,10 +37,10 @@ namespace Cake.AndroidSdkManager
 			var results = new List<FilePath>();
 
 			var ext = environment.Platform.IsUnix() ? "" : ".bat";
-            var androidHome = settings.SdkRoot.MakeAbsolute(environment).FullPath;
+			var androidHome = settings.SdkRoot.MakeAbsolute(environment).FullPath;
 
-            if (!System.IO.Directory.Exists (androidHome))
-			    androidHome = environment.GetEnvironmentVariable("ANDROID_HOME");
+			if (!System.IO.Directory.Exists (androidHome))
+				androidHome = environment.GetEnvironmentVariable("ANDROID_HOME");
 
 			if (!string.IsNullOrEmpty(androidHome) && System.IO.Directory.Exists(androidHome))
 			{
@@ -52,10 +53,10 @@ namespace Cake.AndroidSdkManager
 
 		public AndroidSdkManagerList List(AndroidSdkManagerToolSettings settings)
 		{
-			var result = new AndroidSdkManagerList();
-
 			if (settings == null)
 				settings = new AndroidSdkManagerToolSettings();
+
+			var version = GetBuildToolsVersion(settings);
 
 			//adb devices -l
 			var builder = new ProcessArgumentBuilder();
@@ -69,7 +70,6 @@ namespace Cake.AndroidSdkManager
 				RedirectStandardOutput = true,
 			});
 
-
 			//var processField = p.GetType().GetField("_process", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.GetField | System.Reflection.BindingFlags.Instance);
 
 			//var process = (System.Diagnostics.Process)processField.GetValue(p);
@@ -78,72 +78,40 @@ namespace Cake.AndroidSdkManager
 
 			p.WaitForExit();
 
-			int section = 0;
+			if (version.StartsWith("26"))
+				return BuildToolsParser.ParseSdkManagerList(p);
+			else
+				return LegacyBuildToolsParser.ParseSdkManagerList(p);
+		}
+
+		private string GetBuildToolsVersion(AndroidSdkManagerToolSettings settings)
+		{
+			var builder = new ProcessArgumentBuilder();
+
+			builder.Append("--version");
+
+			var p = RunProcess(settings, builder, new ProcessSettings
+			{
+				RedirectStandardOutput = true,
+			});
+
+			p.WaitForExit();
 
 			foreach (var line in p.GetStandardOutput())
 			{
-				if (line.ToLowerInvariant().Contains("installed packages:"))
+				if (Regex.IsMatch(line, @"^\d", RegexOptions.Compiled))
 				{
-					section = 1;
-					continue;
-				}
-				else if (line.ToLowerInvariant().Contains("available packages:"))
-				{
-					section = 2;
-					continue;
-				}
-				else if (line.ToLowerInvariant().Contains("available updates:"))
-				{
-					section = 3;
-					continue;
+					return line.Trim();
 				}
 
-				if (section >= 1 && section <= 3)
+				if (line.ToLowerInvariant().Contains("unknown argument"))
 				{
-					var parts = line.Split('|');
-
-					// These lines are not actually good data, skip them
-					if (parts == null || parts.Length <= 1
-						|| parts[0].ToLowerInvariant().Contains("path")
-						|| parts[0].ToLowerInvariant().Contains("id")
-						|| parts[0].ToLowerInvariant().Contains ("------"))
-						continue;
-
-					// If we got here, we should have a good line of data
-					if (section == 1)
-					{
-						result.InstalledPackages.Add(new InstalledAndroidSdkPackage
-						{
-							Path = parts[0]?.Trim(),
-							Version = parts[1]?.Trim (),
-							Description = parts[2]?.Trim (),
-							Location = parts[3]?.Trim ()
-						});
-					}
-					else if (section == 2)
-					{
-						result.AvailablePackages.Add(new AndroidSdkPackage
-						{
-							Path = parts[0]?.Trim(),
-							Version = parts[1]?.Trim(),
-							Description = parts[2]?.Trim()
-						});
-					}
-					else if (section == 3)
-					{
-						result.AvailableUpdates.Add(new AvailableAndroidSdkUpdate
-						{
-							Path = parts[0]?.Trim(),
-							InstalledVersion = parts[1]?.Trim(),
-							AvailableVersion = parts[2]?.Trim()
-						});
-					}
+					break;
 				}
 			}
 
-			return result;
+			return "";
 		}
-
 
 		public bool InstallOrUninstall(bool install, IEnumerable<string> packages, AndroidSdkManagerToolSettings settings)
 		{

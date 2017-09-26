@@ -35,6 +35,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuildToolsParser.cs" />
+    <Compile Include="LegacyBuildToolsParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Aliases.cs" />
     <Compile Include="Namespaces.cs" />
