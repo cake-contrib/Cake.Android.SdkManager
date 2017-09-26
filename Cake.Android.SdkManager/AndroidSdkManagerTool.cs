@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using Cake.Core;
+﻿using Cake.Core;
 using Cake.Core.IO;
 using Cake.Core.Tooling;
-using System.Text;
+using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Linq;
 
 namespace Cake.AndroidSdkManager
 {
@@ -39,10 +37,10 @@ namespace Cake.AndroidSdkManager
 			var results = new List<FilePath>();
 
 			var ext = environment.Platform.IsUnix() ? "" : ".bat";
-            var androidHome = settings.SdkRoot.MakeAbsolute(environment).FullPath;
+			var androidHome = settings.SdkRoot.MakeAbsolute(environment).FullPath;
 
-            if (!System.IO.Directory.Exists (androidHome))
-			    androidHome = environment.GetEnvironmentVariable("ANDROID_HOME");
+			if (!System.IO.Directory.Exists (androidHome))
+				androidHome = environment.GetEnvironmentVariable("ANDROID_HOME");
 
 			if (!string.IsNullOrEmpty(androidHome) && System.IO.Directory.Exists(androidHome))
 			{
@@ -55,10 +53,10 @@ namespace Cake.AndroidSdkManager
 
 		public AndroidSdkManagerList List(AndroidSdkManagerToolSettings settings)
 		{
-			var result = new AndroidSdkManagerList();
-
 			if (settings == null)
 				settings = new AndroidSdkManagerToolSettings();
+
+			var version = GetBuildToolsVersion(settings);
 
 			//adb devices -l
 			var builder = new ProcessArgumentBuilder();
@@ -72,7 +70,6 @@ namespace Cake.AndroidSdkManager
 				RedirectStandardOutput = true,
 			});
 
-
 			//var processField = p.GetType().GetField("_process", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.GetField | System.Reflection.BindingFlags.Instance);
 
 			//var process = (System.Diagnostics.Process)processField.GetValue(p);
@@ -81,100 +78,40 @@ namespace Cake.AndroidSdkManager
 
 			p.WaitForExit();
 
-			int section = 0;
-            bool isDependencies = false;
-            var bufferedLines = new Stack<string>();
+			if (version.StartsWith("26"))
+				return BuildToolsParser.ParseSdkManagerList(p);
+			else
+				return LegacyBuildToolsParser.ParseSdkManagerList(p);
+		}
+
+		private string GetBuildToolsVersion(AndroidSdkManagerToolSettings settings)
+		{
+			var builder = new ProcessArgumentBuilder();
+
+			builder.Append("--version");
+
+			var p = RunProcess(settings, builder, new ProcessSettings
+			{
+				RedirectStandardOutput = true,
+			});
+
+			p.WaitForExit();
 
 			foreach (var line in p.GetStandardOutput())
 			{
-                if (line.ToLowerInvariant().Contains("installed packages:"))
+				if (Regex.IsMatch(line, @"^\d", RegexOptions.Compiled))
 				{
-					section = 1;
-					continue;
-				}
-				else if (line.ToLowerInvariant().Contains("available packages:"))
-				{
-					section = 2;
-					continue;
-				}
-				else if (line.ToLowerInvariant().Contains("available updates:"))
-				{
-					section = 3;
-					continue;
+					return line.Trim();
 				}
 
-				if (section >= 1 && section <= 3)
+				if (line.ToLowerInvariant().Contains("unknown argument"))
 				{
-                    if (line.ToLowerInvariant().Contains("dependencies"))
-                    {
-                        isDependencies = true;
-                        continue;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(line) && bufferedLines.Count > 0)
-                    {
-                        ParseBufferedData(result, section, bufferedLines);
-                        isDependencies = false;
-                        continue;
-                    }
-
-                    if (Regex.IsMatch(line, "^([a-z])", RegexOptions.IgnoreCase | RegexOptions.Compiled))
-                    {
-                        if (bufferedLines.Count > 0 && section == 3)
-                            ParseBufferedData(result, section, bufferedLines);
-
-                        bufferedLines.Push(line);
-                        continue;
-                    }
-
-                    var parts = line.Split(':');
-
-                    // These lines are not actually good data, skip them
-                    if (parts == null || parts.Length <= 1
-                        || parts[0].ToLowerInvariant().Contains("path")
-                        || parts[0].ToLowerInvariant().Contains("id")
-                        || parts[0].ToLowerInvariant().Contains("------")
-                        || isDependencies)
-                        continue;
-                    else
-                        bufferedLines.Push(string.Join(":", parts.Skip(1).ToArray()));
+					break;
 				}
 			}
 
-            return result;
+			return "";
 		}
-
-        private void ParseBufferedData(AndroidSdkManagerList result, int section, Stack<string> bufferStack)
-        {
-            if (section == 1)
-            {
-                result.InstalledPackages.Add(new InstalledAndroidSdkPackage
-                {
-                    Location = bufferStack.Pop()?.Trim(),
-                    Version = bufferStack.Pop()?.Trim(),
-                    Description = bufferStack.Pop()?.Trim(),
-                    Path = bufferStack.Pop()?.Trim()
-                });
-            }
-            else if (section == 2)
-            {
-                result.AvailablePackages.Add(new AndroidSdkPackage
-                {
-                    Version = bufferStack.Pop()?.Trim(),
-                    Description = bufferStack.Pop()?.Trim(),
-                    Path = bufferStack.Pop()?.Trim()
-                });
-            }
-            else if (section == 3)
-            {
-                result.AvailableUpdates.Add(new AvailableAndroidSdkUpdate
-                {
-                    AvailableVersion = bufferStack.Pop()?.Trim(),
-                    InstalledVersion = bufferStack.Pop()?.Trim(),
-                    Path = bufferStack.Pop()?.Trim()
-                });
-            }
-        }
 
 		public bool InstallOrUninstall(bool install, IEnumerable<string> packages, AndroidSdkManagerToolSettings settings)
 		{
