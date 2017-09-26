@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Cake.Core;
 using Cake.Core.IO;
 using Cake.Core.Tooling;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Cake.AndroidSdkManager
 {
@@ -79,10 +82,12 @@ namespace Cake.AndroidSdkManager
 			p.WaitForExit();
 
 			int section = 0;
+            bool isDependencies = false;
+            var bufferedLines = new Stack<string>();
 
 			foreach (var line in p.GetStandardOutput())
 			{
-				if (line.ToLowerInvariant().Contains("installed packages:"))
+                if (line.ToLowerInvariant().Contains("installed packages:"))
 				{
 					section = 1;
 					continue;
@@ -100,50 +105,76 @@ namespace Cake.AndroidSdkManager
 
 				if (section >= 1 && section <= 3)
 				{
-					var parts = line.Split('|');
+                    if (line.ToLowerInvariant().Contains("dependencies"))
+                    {
+                        isDependencies = true;
+                        continue;
+                    }
 
-					// These lines are not actually good data, skip them
-					if (parts == null || parts.Length <= 1
-						|| parts[0].ToLowerInvariant().Contains("path")
-						|| parts[0].ToLowerInvariant().Contains("id")
-						|| parts[0].ToLowerInvariant().Contains ("------"))
-						continue;
+                    if (string.IsNullOrWhiteSpace(line) && bufferedLines.Count > 0)
+                    {
+                        ParseBufferedData(result, section, bufferedLines);
+                        isDependencies = false;
+                        continue;
+                    }
 
-					// If we got here, we should have a good line of data
-					if (section == 1)
-					{
-						result.InstalledPackages.Add(new InstalledAndroidSdkPackage
-						{
-							Path = parts[0]?.Trim(),
-							Version = parts[1]?.Trim (),
-							Description = parts[2]?.Trim (),
-							Location = parts[3]?.Trim ()
-						});
-					}
-					else if (section == 2)
-					{
-						result.AvailablePackages.Add(new AndroidSdkPackage
-						{
-							Path = parts[0]?.Trim(),
-							Version = parts[1]?.Trim(),
-							Description = parts[2]?.Trim()
-						});
-					}
-					else if (section == 3)
-					{
-						result.AvailableUpdates.Add(new AvailableAndroidSdkUpdate
-						{
-							Path = parts[0]?.Trim(),
-							InstalledVersion = parts[1]?.Trim(),
-							AvailableVersion = parts[2]?.Trim()
-						});
-					}
+                    if (Regex.IsMatch(line, "^([a-z])", RegexOptions.IgnoreCase | RegexOptions.Compiled))
+                    {
+                        if (bufferedLines.Count > 0 && section == 3)
+                            ParseBufferedData(result, section, bufferedLines);
+
+                        bufferedLines.Push(line);
+                        continue;
+                    }
+
+                    var parts = line.Split(':');
+
+                    // These lines are not actually good data, skip them
+                    if (parts == null || parts.Length <= 1
+                        || parts[0].ToLowerInvariant().Contains("path")
+                        || parts[0].ToLowerInvariant().Contains("id")
+                        || parts[0].ToLowerInvariant().Contains("------")
+                        || isDependencies)
+                        continue;
+                    else
+                        bufferedLines.Push(string.Join(":", parts.Skip(1).ToArray()));
 				}
 			}
 
-			return result;
+            return result;
 		}
 
+        private void ParseBufferedData(AndroidSdkManagerList result, int section, Stack<string> bufferStack)
+        {
+            if (section == 1)
+            {
+                result.InstalledPackages.Add(new InstalledAndroidSdkPackage
+                {
+                    Location = bufferStack.Pop()?.Trim(),
+                    Version = bufferStack.Pop()?.Trim(),
+                    Description = bufferStack.Pop()?.Trim(),
+                    Path = bufferStack.Pop()?.Trim()
+                });
+            }
+            else if (section == 2)
+            {
+                result.AvailablePackages.Add(new AndroidSdkPackage
+                {
+                    Version = bufferStack.Pop()?.Trim(),
+                    Description = bufferStack.Pop()?.Trim(),
+                    Path = bufferStack.Pop()?.Trim()
+                });
+            }
+            else if (section == 3)
+            {
+                result.AvailableUpdates.Add(new AvailableAndroidSdkUpdate
+                {
+                    AvailableVersion = bufferStack.Pop()?.Trim(),
+                    InstalledVersion = bufferStack.Pop()?.Trim(),
+                    Path = bufferStack.Pop()?.Trim()
+                });
+            }
+        }
 
 		public bool InstallOrUninstall(bool install, IEnumerable<string> packages, AndroidSdkManagerToolSettings settings)
 		{
