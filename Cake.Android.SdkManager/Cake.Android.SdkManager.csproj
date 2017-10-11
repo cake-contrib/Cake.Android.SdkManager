@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Cake.AndroidSdkManager</RootNamespace>
     <AssemblyName>Cake.Android.SdkManager</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -30,8 +30,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="Cake.Core">
-      <HintPath>..\packages\Cake.Core.0.17.0\lib\net45\Cake.Core.dll</HintPath>
+      <HintPath>..\packages\Cake.Core.0.22.2\lib\net46\Cake.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +50,7 @@
     <Compile Include="InstalledAndroidSdkPackage.cs" />
     <Compile Include="AvailableAndroidSdkUpdate.cs" />
     <Compile Include="ToolEx.cs" />
+    <Compile Include="AndroidSdkDownloader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
