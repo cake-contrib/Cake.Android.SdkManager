@@ -39,7 +39,7 @@ namespace Cake.AndroidSdkManager.Fakes
 		[TearDown]
 		public void Teardown()
 		{
-			//context.DumpLogs();
+			context.DumpLogs();
 		}
 	}
 }

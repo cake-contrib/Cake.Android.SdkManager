@@ -19,7 +19,7 @@ namespace Cake.AndroidSdkManager.Fakes
 				System.IO.Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory));
 			
 			var fileSystem = new FileSystem();
-			var environment = new Cake.Testing.FakeEnvironment(PlatformFamily.Windows);
+			var environment = new Cake.Testing.FakeEnvironment(PlatformFamily.OSX);
 			var globber = new Globber(fileSystem, environment);
 			log = new FakeCakeLog();
 			var args = new FakeCakeArguments();

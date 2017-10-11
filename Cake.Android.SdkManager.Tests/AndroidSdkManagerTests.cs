@@ -12,15 +12,29 @@ namespace Cake.AndroidSdkManager.Tests
 	public class Tests : TestFixtureBase
 	{
 		const string ANDROID_SDK_ROOT = "../../../android-sdk/";
-		
+
+		[Test] 
+		public void A1_Download_SDK ()
+		{
+			Cake.AndroidSdkManagerDownload(null, null);
+
+			Assert.IsTrue(Cake.FileSystem.Exist(new FilePath ("./tools/androidsdk/tools/bin/sdkmanager"))
+			             || Cake.FileSystem.Exist(new FilePath("./tools/androidsdk/tools/bin/sdkmanager.bat")));
+		}
 		[Test]
 		public void List()
 		{
 			var list = this.Cake.AndroidSdkManagerList(new AndroidSdkManagerToolSettings {
-				SdkRoot = ANDROID_SDK_ROOT
+				SdkRoot = ANDROID_SDK_ROOT, SkipVersionCheck = false
 			});
 
 			Assert.NotNull(list);
+
+			foreach (var a in list.AvailablePackages)
+				Console.WriteLine($"{a.Description}\t{a.Version}\t{a.Path}");
+
+			foreach (var a in list.InstalledPackages)
+				Console.WriteLine($"{a.Description}\t{a.Version}\t{a.Path}");
 		}
 
 		[Test]
