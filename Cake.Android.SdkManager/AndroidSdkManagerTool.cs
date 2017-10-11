@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Cake.Core;
 using Cake.Core.IO;
 using Cake.Core.Tooling;
@@ -8,6 +10,8 @@ namespace Cake.AndroidSdkManager
 {
 	internal class AndroidSdkManagerTool : ToolEx<AndroidSdkManagerToolSettings>
 	{
+		const string ANDROID_SDKMANAGER_MINIMUM_VERSION_REQUIRED = "26.1.1";
+
 		public AndroidSdkManagerTool(ICakeContext cakeContext, IFileSystem fileSystem, ICakeEnvironment cakeEnvironment, IProcessRunner processRunner, IToolLocator toolLocator)
 			: base(fileSystem, cakeEnvironment, processRunner, toolLocator)
 		{
@@ -35,7 +39,7 @@ namespace Cake.AndroidSdkManager
 		{
 			var results = new List<FilePath>();
 
-			var ext = environment.Platform.IsUnix() ? "" : ".bat";
+			var ext = environment.Platform.Family == PlatformFamily.Windows ? ".bat" : "";
             var androidHome = settings.SdkRoot.MakeAbsolute(environment).FullPath;
 
             if (!System.IO.Directory.Exists (androidHome))
@@ -50,6 +54,29 @@ namespace Cake.AndroidSdkManager
 			return results;
 		}
 
+		readonly Regex rxListDesc = new Regex("\\s+Description:\\s+(?<desc>.*?)$", RegexOptions.Compiled | RegexOptions.Singleline);
+		readonly Regex rxListVers = new Regex("\\s+Version:\\s+(?<ver>.*?)$", RegexOptions.Compiled | RegexOptions.Singleline);
+		readonly Regex rxListLoc = new Regex("\\s+Installed Location:\\s+(?<loc>.*?)$", RegexOptions.Compiled | RegexOptions.Singleline);
+
+		public void CheckSdkManagerVersion (AndroidSdkManagerToolSettings settings)
+		{
+			if (settings == null)
+				settings = new AndroidSdkManagerToolSettings();
+
+			if (settings.SkipVersionCheck)
+				return;
+			
+			var builder = new ProcessArgumentBuilder();
+			builder.Append("--version");
+
+			var pex = RunProcessEx(settings, builder);
+
+			var exitCode = pex.Complete.Result;
+
+			if (!pex.StandardOutput.Any(o => o.Trim().Equals(ANDROID_SDKMANAGER_MINIMUM_VERSION_REQUIRED, StringComparison.OrdinalIgnoreCase)))
+				throw new NotSupportedException("Your sdkmanager is out of date.  Version " + ANDROID_SDKMANAGER_MINIMUM_VERSION_REQUIRED + " or later is required.");
+		}
+
 		public AndroidSdkManagerList List(AndroidSdkManagerToolSettings settings)
 		{
 			var result = new AndroidSdkManagerList();
@@ -57,10 +84,12 @@ namespace Cake.AndroidSdkManager
 			if (settings == null)
 				settings = new AndroidSdkManagerToolSettings();
 
+			CheckSdkManagerVersion(settings);
+
 			//adb devices -l
 			var builder = new ProcessArgumentBuilder();
 
-			builder.Append("--list");
+			builder.Append("--list --verbose");
 
 			BuildStandardOptions(settings, builder);
 
@@ -80,8 +109,16 @@ namespace Cake.AndroidSdkManager
 
 			int section = 0;
 
+			var path = string.Empty;
+			var description = string.Empty;
+			var version = string.Empty;
+			var location = string.Empty;
+
 			foreach (var line in p.GetStandardOutput())
 			{
+				if (line.StartsWith("------"))
+					continue;
+				
 				if (line.ToLowerInvariant().Contains("installed packages:"))
 				{
 					section = 1;
@@ -98,46 +135,58 @@ namespace Cake.AndroidSdkManager
 					continue;
 				}
 
-				if (section >= 1 && section <= 3)
+				if (section >= 1 && section <= 2)
 				{
-					var parts = line.Split('|');
+					if (string.IsNullOrEmpty(path)) {
 
-					// These lines are not actually good data, skip them
-					if (parts == null || parts.Length <= 1
-						|| parts[0].ToLowerInvariant().Contains("path")
-						|| parts[0].ToLowerInvariant().Contains("id")
-						|| parts[0].ToLowerInvariant().Contains ("------"))
+						// If we have spaces preceding the line, it's not a new item yet
+						if (line.StartsWith(" "))
+							continue;
+						
+						path = line.Trim();
 						continue;
+					}
+
+					if (rxListDesc.IsMatch(line)) {
+						description = rxListDesc.Match(line)?.Groups?["desc"]?.Value;
+						continue;
+					}
+
+					if (rxListVers.IsMatch(line)) {
+						version = rxListVers.Match(line)?.Groups?["ver"]?.Value;
+						continue;
+					}
+
+					if (rxListLoc.IsMatch(line)) {
+						location = rxListLoc.Match(line)?.Groups?["loc"]?.Value;
+						continue;
+					}
 
 					// If we got here, we should have a good line of data
 					if (section == 1)
 					{
 						result.InstalledPackages.Add(new InstalledAndroidSdkPackage
 						{
-							Path = parts[0]?.Trim(),
-							Version = parts[1]?.Trim (),
-							Description = parts[2]?.Trim (),
-							Location = parts[3]?.Trim ()
+							Path = path,
+							Version = version,
+							Description = description,
+							Location = location
 						});
 					}
 					else if (section == 2)
 					{
 						result.AvailablePackages.Add(new AndroidSdkPackage
 						{
-							Path = parts[0]?.Trim(),
-							Version = parts[1]?.Trim(),
-							Description = parts[2]?.Trim()
+							Path = path,
+							Version = version,
+							Description = description
 						});
 					}
-					else if (section == 3)
-					{
-						result.AvailableUpdates.Add(new AvailableAndroidSdkUpdate
-						{
-							Path = parts[0]?.Trim(),
-							InstalledVersion = parts[1]?.Trim(),
-							AvailableVersion = parts[2]?.Trim()
-						});
-					}
+
+					path = null;
+					description = null;
+					version = null;
+					location = null;
 				}
 			}
 
@@ -149,6 +198,8 @@ namespace Cake.AndroidSdkManager
 		{
 			if (settings == null)
 				settings = new AndroidSdkManagerToolSettings();
+
+			CheckSdkManagerVersion(settings);
 
 			//adb devices -l
 			var builder = new ProcessArgumentBuilder();
@@ -166,6 +217,41 @@ namespace Cake.AndroidSdkManager
 			pex.StandardInput.WriteLine("y");
 
 			pex.Complete.Wait();
+
+			foreach (var line in pex.StandardOutput)
+			{
+				if (line.StartsWith("Info:", StringComparison.InvariantCultureIgnoreCase))
+					this.context.Log.Write(Core.Diagnostics.Verbosity.Diagnostic, Core.Diagnostics.LogLevel.Information, line);
+			}
+
+			return true;
+		}
+
+		public bool AcceptLicenses(AndroidSdkManagerToolSettings settings)
+		{
+			if (settings == null)
+				settings = new AndroidSdkManagerToolSettings();
+
+			CheckSdkManagerVersion(settings);
+
+			//adb devices -l
+			var builder = new ProcessArgumentBuilder();
+
+			builder.Append("--licenses");
+
+			BuildStandardOptions(settings, builder);
+
+			var pex = RunProcessEx(settings, builder);
+
+			while (!pex.Complete.IsCompleted)
+			{
+				System.Threading.Thread.Sleep(250);
+				pex.StandardInput.WriteLine("y");
+			}
+
+			pex.Complete.Wait();
+
+			System.Threading.Thread.Sleep(500);
 
 			foreach (var line in pex.StandardOutput)
 			{
@@ -201,6 +287,22 @@ namespace Cake.AndroidSdkManager
 			}
 
 			return true;
+		}
+
+		public IEnumerable<string> Help(AndroidSdkManagerToolSettings settings)
+		{
+			if (settings == null)
+				settings = new AndroidSdkManagerToolSettings();
+
+			//adb devices -l
+			var builder = new ProcessArgumentBuilder();
+
+			var pex = RunProcessEx(settings, builder);
+
+			pex.Complete.Wait();
+
+			foreach (var line in pex.StandardOutput)
+				yield return line;
 		}
 
 		void BuildStandardOptions(AndroidSdkManagerToolSettings settings, ProcessArgumentBuilder builder)

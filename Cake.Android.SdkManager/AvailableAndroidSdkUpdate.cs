@@ -12,14 +12,14 @@ namespace Cake.AndroidSdkManager
 		/// <value>The path.</value>
 		public string Path { get; set; }
 		/// <summary>
-		/// Gets or sets the installed version of the package.
-		/// </summary>
-		/// <value>The installed version.</value>
-		public string InstalledVersion { get; set; }
-		/// <summary>
 		/// Gets or sets the available version of the package.
 		/// </summary>
-		/// <value>The available version.</value>
-		public string AvailableVersion { get; set; }
+		/// <value>The installed version.</value>
+		public string Version { get; set; }
+		/// <summary>
+		/// Gets or sets the package description.
+		/// </summary>
+		/// <value>The description.</value>
+		public string Description { get; set; }
 	}
 }

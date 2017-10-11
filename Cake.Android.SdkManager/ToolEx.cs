@@ -81,11 +81,15 @@ namespace Cake.AndroidSdkManager
 				return null;
 			}
 
-			var complete = Task.Run(() => {
-				process.WaitForExit();
-			});
+			process.EnableRaisingEvents = true;
+
 			var consoleOutputQueue = SubscribeStandardConsoleOutputQueue(process);
 			var consoleErrorQueue = SubscribeStandardConsoleErrorQueue(process);
+
+			var complete = Task.Run(() => {
+				process.WaitForExit();
+				return process.ExitCode;
+			});
 
 			return new ToolExProcess
 			{
@@ -99,14 +103,14 @@ namespace Cake.AndroidSdkManager
 
 		protected class ToolExProcess
 		{
-			public Task Complete { get; set; }
+			public Task<int> Complete { get; set; }
 			public ConcurrentQueue<string> StandardOutput { get; set; }
 			public ConcurrentQueue<string> StandardError { get; set; }
 			public StreamWriter StandardInput { get; set; }
 		}
 
 
-		private FilePath GetToolPath(TSettings settings)
+		private new FilePath GetToolPath(TSettings settings)
 		{
 			return GetToolPathUsingToolService(settings);
 		}

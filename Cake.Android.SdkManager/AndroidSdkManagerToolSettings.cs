@@ -43,6 +43,13 @@ namespace Cake.AndroidSdkManager
 		/// </summary>
 		/// <value>The proxy port.</value>
 		public int ProxyPort { get; set; } = -1;
+
+		/// <summary>
+		/// Gets or sets a value indicating whether to skip the sdkmanager version check.
+		/// By default, the sdkmanager version is checked before each invocation to ensure a new enough version is in use.
+		/// </summary>
+		/// <value><c>true</c> if skip version check; otherwise, <c>false</c>.</value>
+		public bool SkipVersionCheck { get; set; } = false;
 	}
 
 	/// <summary>

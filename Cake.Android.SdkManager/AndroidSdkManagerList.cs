@@ -17,10 +17,5 @@ namespace Cake.AndroidSdkManager
 		/// </summary>
 		/// <value>The installed packages.</value>
 		public List<InstalledAndroidSdkPackage> InstalledPackages { get; set; } = new List<InstalledAndroidSdkPackage>();
-		/// <summary>
-		/// Gets or sets the available package updates.
-		/// </summary>
-		/// <value>The available updates.</value>
-		public List<AvailableAndroidSdkUpdate> AvailableUpdates { get; set; } = new List<AvailableAndroidSdkUpdate>();
 	}
 }
