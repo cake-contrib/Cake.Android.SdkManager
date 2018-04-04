@@ -41,10 +41,11 @@ namespace Cake.AndroidSdkManager.Tests
 		public void Install()
 		{
 			var settings = new AndroidSdkManagerToolSettings {
-				SdkRoot = ANDROID_SDK_ROOT
+                SkipVersionCheck=  true,
+                SdkRoot = "/Users/redth/Library/Developer/Xamarin/android-sdk-macosx/"
 			};
 
-			this.Cake.AndroidSdkManagerInstall(new [] { "extras;google;auto" }, settings);
+            this.Cake.AndroidSdkManagerInstall(new [] { "system-images;android-26;google_apis;x86" }, settings);
 
 			var list = Cake.AndroidSdkManagerList(settings);
 

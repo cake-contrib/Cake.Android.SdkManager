@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Cake.Android.SdkManager</PackageId>
+    <Title>Cake.Android.SdkManager</Title>
+    <PackageTags>Cake Script Build</PackageTags>
+    <Authors>Redth</Authors>
+    <Owners>Redth</Owners>
+    <Description>Cake Build addon to provide Aliases for Android's SDK Manager.</Description>
+    <Summary>Cake build aliases for Android's SDK Manager.</Summary>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/Redth/Cake.Android.SdkManager/master/LICENSE.md</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Redth/Cake.Android.SdkManager</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/Redth/Cake.Android.SdkManager/master/icon.png</PackageIconUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cake.Core" Version="0.26.1" />
+    <PackageReference Include="Cake.Common" Version="0.26.1" />
+  </ItemGroup>
+ 
+</Project>

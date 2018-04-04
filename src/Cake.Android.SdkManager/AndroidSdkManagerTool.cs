@@ -8,7 +8,7 @@ using Cake.Core.Tooling;
 
 namespace Cake.AndroidSdkManager
 {
-	internal class AndroidSdkManagerTool : ToolEx<AndroidSdkManagerToolSettings>
+	internal class AndroidSdkManagerTool : ToolEx
 	{
 		const string ANDROID_SDKMANAGER_MINIMUM_VERSION_REQUIRED = "26.1.1";
 

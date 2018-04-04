@@ -11,7 +11,7 @@ using Cake.Core.Tooling;
 
 namespace Cake.AndroidSdkManager
 {
-	internal abstract class ToolEx<TSettings> : Tool<TSettings> where TSettings : Cake.Core.Tooling.ToolSettings
+    internal abstract class ToolEx : Tool<AndroidSdkManagerToolSettings>
 	{
 		private readonly ICakeEnvironment _environment;
 		private readonly IFileSystem _fileSystem;
@@ -24,7 +24,7 @@ namespace Cake.AndroidSdkManager
 			_tools = tools;
 		}
 
-		protected ToolExProcess RunProcessEx(TSettings settings, ProcessArgumentBuilder arguments)
+        protected ToolExProcess RunProcessEx(AndroidSdkManagerToolSettings settings, ProcessArgumentBuilder arguments)
 		{
 			// Should we customize the arguments?
 			if (settings.ArgumentCustomization != null)
@@ -110,19 +110,27 @@ namespace Cake.AndroidSdkManager
 		}
 
 
-		private new FilePath GetToolPath(TSettings settings)
+        private new FilePath GetToolPath(AndroidSdkManagerToolSettings settings)
 		{
 			return GetToolPathUsingToolService(settings);
 		}
 
-		private FilePath GetToolPathUsingToolService(TSettings settings)
+        private FilePath GetToolPathUsingToolService(AndroidSdkManagerToolSettings settings)
 		{
-			var toolPath = settings.ToolPath;
-			if (toolPath != null)
-			{
-				return toolPath.MakeAbsolute(_environment);
-			}
+            var ext = _environment.Platform.Family == PlatformFamily.Windows ? ".bat" : "";
 
+            FilePath toolPath = null;
+
+            if (settings.SdkRoot != null && _fileSystem.Exist(settings.SdkRoot))
+                toolPath = settings?.SdkRoot?.Combine("tools")?.Combine("bin")?.CombineWithFilePath ("sdkmanager" + ext);
+
+            if (toolPath != null)
+                return toolPath.MakeAbsolute (_environment);
+            
+			toolPath = settings.ToolPath;
+			if (toolPath != null)
+				return toolPath.MakeAbsolute(_environment);
+			
 			// Look for each possible executable name in various places.
 			var toolExeNames = GetToolExecutableNames();
 			foreach (var toolExeName in toolExeNames)
