@@ -5,41 +5,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace Cake.AndroidSdkManager.Fakes
 {
-	[TestFixture]
-	public abstract class TestFixtureBase
-	{
-		FakeCakeContext context;
+    public abstract class TestFixtureBase : IDisposable
+    {
+        FakeCakeContext context;
 
-		public ICakeContext Cake { get { return context.CakeContext; } }
+        public ICakeContext Cake { get { return context.CakeContext; } }
 
-		[OneTimeSetUp]
-		public void RunBeforeAnyTests()
-		{
-			Environment.CurrentDirectory = System.IO.Path.GetDirectoryName(typeof(TestFixtureBase).Assembly.Location);
-		}
+        public TestFixtureBase()
+        {
+            Environment.CurrentDirectory = System.IO.Path.GetDirectoryName(typeof(TestFixtureBase).Assembly.Location);
+            context = new FakeCakeContext();
 
-		[SetUp]
-		public void Setup ()
-		{
-			context = new FakeCakeContext();
+            //var dp = new DirectoryPath("./testdata");
+            //var d = context.CakeContext.FileSystem.GetDirectory(dp);
 
-			//var dp = new DirectoryPath("./testdata");
-			//var d = context.CakeContext.FileSystem.GetDirectory(dp);
+            //if (d.Exists)
+            //  d.Delete(true);
 
-			//if (d.Exists)
-			//	d.Delete(true);
+            //d.Create();
+        }
 
-			//d.Create();
-		}
-
-		[TearDown]
-		public void Teardown()
-		{
-			context.DumpLogs();
-		}
-	}
+        public void Dispose()
+        {
+            context.DumpLogs();
+        }
+    }
 }

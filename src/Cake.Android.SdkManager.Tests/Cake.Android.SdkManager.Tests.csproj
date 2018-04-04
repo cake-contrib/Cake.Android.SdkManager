@@ -17,4 +17,7 @@
     <ProjectReference Include="..\Cake.Android.SdkManager\Cake.Android.SdkManager.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="packages.config" />
+  </ItemGroup>
 </Project>
