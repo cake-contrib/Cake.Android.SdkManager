@@ -15,7 +15,7 @@
     <Summary>Cake build aliases for Android's SDK Manager.</Summary>
     <PackageLicenseUrl>https://raw.githubusercontent.com/Redth/Cake.Android.SdkManager/master/LICENSE.md</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Redth/Cake.Android.SdkManager</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/Redth/Cake.Android.SdkManager/master/icon.png</PackageIconUrl>
+    <PackageIconUrl>https://cdn.rawgit.com/cake-contrib/graphics/a5cf0f881c390650144b2243ae551d5b9f836196/png/cake-contrib-medium.png</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>
