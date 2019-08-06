@@ -10,11 +10,13 @@
     <Title>Cake.Android.SdkManager</Title>
     <PackageTags>Cake Script Build</PackageTags>
     <Authors>Redth</Authors>
-    <Owners>Redth</Owners>
+    <Owners>Redth, cake-contrib</Owners>
     <Description>Cake Build addon to provide Aliases for Android's SDK Manager.</Description>
     <Summary>Cake build aliases for Android's SDK Manager.</Summary>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/Redth/Cake.Android.SdkManager/master/LICENSE.md</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/Redth/Cake.Android.SdkManager</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/cake-contrib/Cake.Android.SdkManager.git</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/cake-contrib/Cake.Android.SdkManager</PackageProjectUrl>
     <PackageIconUrl>https://cdn.jsdelivr.net/gh/cake-contrib/graphics/png/cake-contrib-medium.png</PackageIconUrl>
   </PropertyGroup>
 
@@ -22,5 +24,5 @@
     <PackageReference Include="Cake.Core" Version="0.33.0" PrivateAssets="All" />
     <PackageReference Include="Cake.Common" Version="0.33.0" PrivateAssets="All" />
   </ItemGroup>
- 
+
 </Project>
