@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using Cake.Core;
 using Cake.Core.IO;
+using System.Linq;
+using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace Cake.AndroidSdkManager
 {
@@ -11,8 +15,6 @@ namespace Cake.AndroidSdkManager
 	{
 		const string REPOSITORY_URL_BASE = "https://dl.google.com/android/repository/";
 		const string REPOSITORY_URL = REPOSITORY_URL_BASE + "repository2-1.xml";
-		const string REPOSITORY_SDK_PATTERN = REPOSITORY_URL_BASE + "tools_r{0}.{1}.{2}-{3}.zip";
-
 
 		/// <summary>
 		/// Downloads the Android SDK
@@ -27,26 +29,28 @@ namespace Cake.AndroidSdkManager
 			http.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
 			http.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
 			http.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Charset", "ISO-8859-1");
+			
+			var data = http.GetStringAsync(REPOSITORY_URL).Result;
 
+			var xdoc = XDocument.Parse(data);
 
-			if (specificVersion == null) {
-				try
+			var packages = xdoc.XPathSelectElements("//remotePackage[@path='tools']")
+				.Select(p =>
 				{
-					var data = http.GetStringAsync(REPOSITORY_URL).Result;
-
-					var xdoc = new System.Xml.XmlDocument();
-					xdoc.LoadXml(data);
-
-					var revNode = xdoc.SelectSingleNode("//remotePackage[@path='tools']/revision");
-
-					var strVer = revNode.SelectSingleNode("major")?.InnerText + "." + revNode.SelectSingleNode("minor").InnerText + "." + revNode.SelectSingleNode("micro").InnerText;
-
-					specificVersion = Version.Parse(strVer);
-				} catch {
-					specificVersion = new Version(25, 2, 5);
-				}
-			}
-
+					var revision = p.Element("revision");
+					var version =
+						new Version($"{revision.Element("major").Value}.{revision.Element("minor").Value}.{revision.Element("micro").Value}");
+					var archives = p.Element("archives").Elements();
+					var platforms = new Dictionary<string, string>
+					{
+						{ "linux", archives.FirstOrDefault(a => a.Element("host-os").Value == "linux").Element("complete").Element("url").Value },
+						{ "windows", archives.FirstOrDefault(a => a.Element("host-os").Value == "windows").Element("complete").Element("url").Value },
+						{ "macosx", archives.FirstOrDefault(a => a.Element("host-os").Value == "macosx").Element("complete").Element("url").Value },
+					};
+					return new { version, platforms };
+				})
+				.OrderByDescending(p => p.version)
+				.ToArray();
 
 			var platformStr = "windows";
 			switch (context.Environment.Platform.Family) {
@@ -58,7 +62,19 @@ namespace Cake.AndroidSdkManager
 					break;
 			}
 
-			var sdkUrl = string.Format(REPOSITORY_SDK_PATTERN, specificVersion.Major, specificVersion.Minor, specificVersion.Build, platformStr);
+			var package = packages.FirstOrDefault(p => specificVersion == null || p.version == specificVersion);
+
+			if (package == null)
+			{
+				throw new InvalidOperationException("Package cannot be found.");
+			}
+
+			if (!package.platforms.TryGetValue(platformStr, out var platformUrl))
+			{
+				throw new InvalidOperationException($"Specific platform is not supported by the package version {package.version}.");
+			}
+
+			var sdkUrl = $"{REPOSITORY_URL_BASE}{platformUrl}";
 
 			var toolsDir = new DirectoryPath("./tools");
 			if (!context.FileSystem.Exist(toolsDir))

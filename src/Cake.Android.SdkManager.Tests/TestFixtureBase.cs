@@ -1,11 +1,6 @@
 ﻿using Cake.Core;
-using Cake.Core.IO;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
+using System.IO;
 
 namespace Cake.AndroidSdkManager.Fakes
 {
@@ -32,6 +27,7 @@ namespace Cake.AndroidSdkManager.Fakes
         public void Dispose()
         {
             context.DumpLogs();
+            Directory.Delete("./tools", recursive: true);
         }
     }
 }
