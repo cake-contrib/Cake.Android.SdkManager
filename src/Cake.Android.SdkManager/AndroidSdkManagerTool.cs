@@ -245,8 +245,19 @@ namespace Cake.AndroidSdkManager
 
 			while (!pex.Complete.IsCompleted)
 			{
-				System.Threading.Thread.Sleep(250);
-				pex.StandardInput.WriteLine("y");
+                System.Threading.Thread.Sleep(250);
+				if (pex.Complete.IsCompleted)
+					break;
+
+				try
+				{
+					pex.StandardInput.WriteLine("y");
+				}
+				catch(Exception exc)
+                {
+					if (exc.Message != "Broken pipe")
+						throw;
+                }
 			}
 
 			pex.Complete.Wait();
