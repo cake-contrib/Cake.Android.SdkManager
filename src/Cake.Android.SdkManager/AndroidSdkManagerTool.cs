@@ -254,10 +254,10 @@ namespace Cake.AndroidSdkManager
 					pex.StandardInput.WriteLine("y");
 				}
 				catch(Exception exc)
-                {
+				{
 					if (exc.Message != "Broken pipe")
 						throw;
-                }
+				}
 			}
 
 			pex.Complete.Wait();
