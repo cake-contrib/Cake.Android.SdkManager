@@ -245,9 +245,9 @@ namespace Cake.AndroidSdkManager
 
 			while (!pex.Complete.IsCompleted)
 			{
-                System.Threading.Thread.Sleep(250);
+				System.Threading.Thread.Sleep(250);
 				if (pex.Complete.IsCompleted)
-					break;
+				    break;
 
 				try
 				{
